@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import Wallet from '../Wallet';
 import { Link } from 'react-router-dom';
+import MetaTransactionSwitch from '../MetaTransactionSwitch';
 
 const HeaderFrame = styled.div`
     display: flex;
@@ -10,6 +11,16 @@ const HeaderFrame = styled.div`
     width: 100%;
     background-color: var(--panel-background);
     border-bottom: 1px solid var(--panel-border);
+`;
+
+const FillSpaceHeaderElement = styled.div`
+    width: -webkit-fill-available;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 10px;
+    margin: 19px 30px;
+    min-width: 0;
+    align-items: center;
 `;
 
 const HeaderElement = styled.div`
@@ -53,6 +64,9 @@ const Header = () => {
                     <AppName>Balancer</AppName>
                 </StyledLink>
             </HeaderElement>
+            <FillSpaceHeaderElement>
+                <MetaTransactionSwitch />
+            </FillSpaceHeaderElement>
             <HeaderElement>
                 <Wallet />
             </HeaderElement>

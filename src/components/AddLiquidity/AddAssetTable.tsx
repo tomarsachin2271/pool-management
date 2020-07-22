@@ -219,13 +219,13 @@ const AddAssetTable = observer((props: Props) => {
             proxyStore,
             contractMetadataStore,
             addLiquidityFormStore,
+            biconomyForwarderStore,
         },
     } = useStores();
 
     const account = providerStore.providerStatus.account;
 
     const pool = poolStore.getPool(poolAddress);
-    const proxyAddress = proxyStore.getInstanceAddress();
     let userBalances: undefined | BigNumberMap;
     let accountApprovalsLoaded = false;
 
@@ -234,7 +234,7 @@ const AddAssetTable = observer((props: Props) => {
         accountApprovalsLoaded = tokenStore.areAccountApprovalsLoaded(
             poolStore.getPoolTokens(pool.address),
             account,
-            proxyAddress
+            proxyStore.getSpenderAddress()
         );
     }
 
@@ -271,7 +271,7 @@ const AddAssetTable = observer((props: Props) => {
         if (checked) {
             const response = await tokenStore.approveMax(
                 tokenAddress,
-                proxyAddress
+                proxyStore.getSpenderAddress()
             );
 
             // Revert change on metamask error
@@ -284,7 +284,7 @@ const AddAssetTable = observer((props: Props) => {
         } else {
             const response = await tokenStore.revokeApproval(
                 tokenAddress,
-                proxyAddress
+                proxyStore.getSpenderAddress()
             );
 
             // Revert change on metamask error
@@ -337,7 +337,7 @@ const AddAssetTable = observer((props: Props) => {
                         hasMaxApproval = tokenStore.hasMaxApproval(
                             tokenAddress,
                             account,
-                            proxyAddress
+                            proxyStore.getSpenderAddress()
                         );
                     }
 

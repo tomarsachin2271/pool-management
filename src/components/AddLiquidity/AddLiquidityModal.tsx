@@ -179,7 +179,7 @@ const AddLiquidityModal = observer((props: Props) => {
                 return !tokenStore.hasApproval(
                     token.address,
                     account,
-                    proxyAddress
+                    proxyStore.getSpenderAddress()
                 );
             });
         } else {
@@ -187,7 +187,13 @@ const AddLiquidityModal = observer((props: Props) => {
             const token = pool.tokens.find(
                 token => token.address === tokenAddress
             );
-            if (tokenStore.hasApproval(tokenAddress, account, proxyAddress)) {
+            if (
+                tokenStore.hasApproval(
+                    tokenAddress,
+                    account,
+                    proxyStore.getSpenderAddress()
+                )
+            ) {
                 return;
             } else {
                 return token;
@@ -372,8 +378,6 @@ const AddLiquidityModal = observer((props: Props) => {
     const account = providerStore.providerStatus.account;
 
     const pool = poolStore.getPool(poolAddress);
-    const proxyAddress = proxyStore.getInstanceAddress();
-
     const validationStatus = addLiquidityFormStore.validationStatus;
     const hasValidInput = addLiquidityFormStore.hasValidInput();
 
@@ -400,7 +404,7 @@ const AddLiquidityModal = observer((props: Props) => {
         const accountApprovalsLoaded = tokenStore.areAccountApprovalsLoaded(
             poolStore.getPoolTokens(pool.address),
             account,
-            proxyAddress
+            proxyStore.getSpenderAddress()
         );
 
         if (accountApprovalsLoaded) {
@@ -414,7 +418,10 @@ const AddLiquidityModal = observer((props: Props) => {
         token?: PoolToken
     ) => {
         if (action === ButtonAction.UNLOCK) {
-            await tokenStore.approveMax(token.address, proxyAddress);
+            await tokenStore.approveMax(
+                token.address,
+                proxyStore.getSpenderAddress()
+            );
         } else if (action === ButtonAction.ADD_LIQUIDITY) {
             // Add Liquidity
 

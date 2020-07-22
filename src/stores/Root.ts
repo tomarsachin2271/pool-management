@@ -12,6 +12,7 @@ import MarketStore from './Market';
 import AddLiquidityFormStore from './AddLiquidityForm';
 import RemoveLiquidityFormStore from './RemoveLiquidityForm';
 import CreatePoolFormStore from './CreatePoolForm';
+import BiconomyForwarderStore from './BiconomyForwarder';
 import SwapsTableStore from './SwapsTable';
 
 export default class RootStore {
@@ -25,6 +26,7 @@ export default class RootStore {
     appSettingsStore: AppSettingsStore;
     contractMetadataStore: ContractMetadataStore;
     proxyStore: ProxyStore;
+    biconomyForwarderStore: BiconomyForwarderStore;
     addLiquidityFormStore: AddLiquidityFormStore;
     removeLiquidityFormStore: RemoveLiquidityFormStore;
     createPoolFormStore: CreatePoolFormStore;
@@ -41,6 +43,7 @@ export default class RootStore {
         this.appSettingsStore = new AppSettingsStore(this);
         this.contractMetadataStore = new ContractMetadataStore(this);
         this.proxyStore = new ProxyStore(this);
+        this.biconomyForwarderStore = new BiconomyForwarderStore(this);
         this.addLiquidityFormStore = new AddLiquidityFormStore(this);
         this.removeLiquidityFormStore = new RemoveLiquidityFormStore(this);
         this.createPoolFormStore = new CreatePoolFormStore(this);

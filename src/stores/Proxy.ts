@@ -45,6 +45,15 @@ export default class Proxy {
         return this.instance;
     };
 
+    getSpenderAddress = (): string => {
+        const { biconomyForwarderStore } = this.rootStore;
+        let spenderAddress = this.instance;
+        if (biconomyForwarderStore.isMetaTransactionEnabled()) {
+            spenderAddress = biconomyForwarderStore.getInstanceAddress();
+        }
+        return spenderAddress;
+    };
+
     hasInstance = (): boolean => {
         return this.instance !== '0x0000000000000000000000000000000000000000';
     };

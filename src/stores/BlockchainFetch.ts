@@ -46,6 +46,7 @@ export default class BlockchainFetchStore {
             proxyStore,
             providerStore,
             contractMetadataStore,
+            biconomyForwarderStore,
         } = this.rootStore;
 
         const account = providerStore.providerStatus.account;
@@ -59,7 +60,12 @@ export default class BlockchainFetchStore {
             address => address !== EtherKey
         );
         const proxyAddress = proxyStore.getInstanceAddress();
-        tokenStore.fetchAccountApprovals(addresses, account, proxyAddress);
+        await biconomyForwarderStore.fetchMetaTransactionEnabled(proxyAddress);
+        tokenStore.fetchAccountApprovals(
+            addresses,
+            account,
+            proxyStore.getSpenderAddress()
+        );
     }
 
     @action async fetchActivePoolAllowances() {

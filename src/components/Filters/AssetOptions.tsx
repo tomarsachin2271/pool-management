@@ -111,7 +111,7 @@ const AssetOptions = observer((props: RouteComponentProps) => {
                 tokenStore.fetchAccountApprovals(
                     [address],
                     account,
-                    proxyAddress
+                    proxyStore.getSpenderAddress()
                 );
                 tokenStore.fetchTokenBalances(account, [address]);
             }
@@ -126,6 +126,7 @@ const AssetOptions = observer((props: RouteComponentProps) => {
         proxyAddress,
         contractMetadataStore,
         tokenStore,
+        proxyStore,
     ]);
 
     const isInvalidToken = (address): boolean => {
