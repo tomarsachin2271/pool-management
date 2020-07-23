@@ -440,21 +440,41 @@ export default class PoolStore {
             contractMetadataStore,
             providerStore,
             proxyStore,
+            biconomyForwarderStore,
         } = this.rootStore;
 
         const dsProxyAddress = proxyStore.getInstanceAddress();
         const bActionsAddress = contractMetadataStore.getBActionsAddress();
+        // Get this BPT Token address from .env
+        const tokenOut = poolAddress;
 
         const data = proxyStore.wrapTransaction(
             ContractTypes.BActions,
             'joinswapExternAmountIn',
             [poolAddress, tokenIn, tokenAmountIn, minPoolAmountOut]
         );
-        return await providerStore.sendTransaction(
+
+        const proxyExecuteData = proxyStore.wrapTransaction(
             ContractTypes.DSProxy,
-            dsProxyAddress,
             'execute',
             [bActionsAddress, data]
+        );
+
+        const account = providerStore.providerStatus.account;
+        let sig = await providerStore.getUserSignature();
+        let to = dsProxyAddress;
+        return await providerStore.sendBiconomyMetaTransaction(
+            ContractTypes.BiconomyForwarder,
+            biconomyForwarderStore.getInstanceAddress(),
+            [
+                account,
+                sig,
+                to,
+                proxyExecuteData,
+                tokenAmountIn,
+                tokenIn,
+                tokenOut,
+            ]
         );
     };
 }

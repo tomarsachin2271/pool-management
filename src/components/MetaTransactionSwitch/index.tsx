@@ -153,7 +153,7 @@ const MetaTransactionSwitch = observer(() => {
                 <Toggle>
                     <ToggleInput
                         type="checkbox"
-                        checked={metaTransactionEnabled}
+                        checked={metaTransactionEnabled || false}
                         disabled={!isProxyExists()}
                         onChange={e => enableMetaTransaction(e)}
                     />

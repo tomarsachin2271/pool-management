@@ -5,11 +5,13 @@ import { ContractTypes } from './Provider';
 export default class BiconomyForwarder {
     @observable instance: string;
     @observable metaTransactionEnabled: boolean;
+    @observable forwardApiId: string;
     rootStore: RootStore;
 
     constructor(rootStore) {
         this.rootStore = rootStore;
-        this.instance = '0x676fc05B5B81952E590692CA721b19DA1f99CA69';
+        this.instance = '0xa9186fe6d71582276fE7eCD07b9a335F25cF1bE1';
+        this.forwardApiId = '82205d32-1e0a-4d60-bfb0-6396d92349c8';
     }
 
     getInstanceAddress = (): string => {

@@ -1,12 +1,13 @@
 import { action, observable, ObservableMap } from 'mobx';
 import RootStore from 'stores/Root';
-import { ethers } from 'ethers';
+import { ethers, Contract } from 'ethers';
 import UncheckedJsonRpcSigner from 'provider/UncheckedJsonRpcSigner';
 import { ActionResponse, sendAction } from './actions/actions';
 import { web3Window as window } from 'provider/Web3Window';
 import { backupUrls, supportedChainId, web3Modal } from 'provider/connectors';
 
 export enum ContractTypes {
+    BiconomyForwarder = 'BiconomyForwarder',
     BPool = 'BPool',
     BActions = 'BActions',
     BFactory = 'BFactory',
@@ -20,6 +21,7 @@ export enum ContractTypes {
 }
 
 export const schema = {
+    BiconomyForwarder: require('../abi/BiconomyForwarder').abi,
     BPool: require('../abi/BPool').abi,
     BActions: require('../abi/BActions').abi,
     BFactory: require('../abi/BFactory').abi,
@@ -34,6 +36,12 @@ export const schema = {
 
 export interface ChainData {
     currentBlockNumber: number;
+}
+
+export interface Signature {
+    r: string;
+    s: string;
+    v: number;
 }
 
 enum ERRORS {
@@ -156,6 +164,152 @@ export default class ProviderStore {
 
         return new ethers.Contract(address, schema[type], library);
     }
+
+    @action getUserSignature = (): Promise<Signature> => {
+        return new Promise<Signature>(async (resolve, reject) => {
+            const { transactionStore, biconomyForwarderStore } = this.rootStore;
+            const account = this.providerStatus.account;
+            const chainId = this.providerStatus.activeChainId;
+            let signature = '';
+            let web3 = this.providerStatus.injectedWeb3;
+            let domainData = {
+                name: 'balancer',
+                version: '1',
+                chainId: chainId.toString(),
+                verifyingContract: biconomyForwarderStore.getInstanceAddress(),
+            };
+            const domainType = [
+                { name: 'name', type: 'string' },
+                { name: 'version', type: 'string' },
+                { name: 'chainId', type: 'uint256' },
+                { name: 'verifyingContract', type: 'address' },
+            ];
+
+            const metaTransactionType = [
+                { name: 'holder', type: 'address' },
+                { name: 'nonce', type: 'uint256' },
+            ];
+
+            let forwarderContract = this.getContract(
+                ContractTypes.BiconomyForwarder,
+                biconomyForwarderStore.getInstanceAddress(),
+                account
+            );
+
+            let nonce = await forwarderContract.nonces(account);
+            let message = {
+                holder: account,
+                nonce: parseInt(nonce),
+            };
+            const dataToSign = JSON.stringify({
+                types: {
+                    EIP712Domain: domainType,
+                    MetaTransaction: metaTransactionType,
+                },
+                domain: domainData,
+                primaryType: 'MetaTransaction',
+                message: message,
+            });
+            console.log(web3);
+            web3.provider.sendAsync(
+                {
+                    jsonrpc: '2.0',
+                    id: 999999999999,
+                    method: 'eth_signTypedData_v4',
+                    params: [account, dataToSign],
+                },
+                async function(err, response) {
+                    if (err) {
+                        reject(err);
+                    }
+                    const signature = response.result.substring(2);
+                    const r = '0x' + signature.substring(0, 64);
+                    const s = '0x' + signature.substring(64, 128);
+                    const v = parseInt(signature.substring(128, 130), 16);
+                    const sig: Signature = {
+                        r: r,
+                        s: s,
+                        v: v,
+                    };
+                    resolve(sig);
+                }
+            );
+        });
+    };
+
+    @action sendBiconomyMetaTransaction = async (
+        to: string,
+        apiId: string,
+        params: any[]
+    ): Promise<ActionResponse> => {
+        const { transactionStore, biconomyForwarderStore } = this.rootStore;
+        const account = this.providerStatus.account;
+        let web3 = this.providerStatus.injectedWeb3;
+        const contract = this.getContract(
+            ContractTypes.BiconomyForwarder,
+            biconomyForwarderStore.getInstanceAddress(),
+            account
+        );
+        console.log(process.env);
+        let biconomyResponse = await fetch(
+            `https://api.biconomy.io/api/v2/meta-tx/native`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8',
+                    // Get this API key from .env
+                    'x-api-key':
+                        'xszlQRYeL.ed1e51df-fb90-4b66-8397-33bdb7a04dd7',
+                },
+                body: JSON.stringify({
+                    to: biconomyForwarderStore.getInstanceAddress(),
+                    // Get this API ID from .env
+                    apiId: biconomyForwarderStore.forwardApiId,
+                    params: params,
+                    from: account,
+                }),
+            }
+        );
+
+        let response: ActionResponse = {
+            contract,
+            action: 'forward',
+            sender: account,
+            data: params,
+            txResponse: undefined,
+            error: undefined,
+        };
+
+        if (biconomyResponse.ok) {
+            let result = await biconomyResponse.json();
+            console.log(result);
+            if (result) {
+                if (result.txHash) {
+                    console.log(this.providerStatus.injectedWeb3);
+                    let txResponse = await this.providerStatus.injectedWeb3.getTransaction(
+                        result.txHash
+                    );
+                    console.log(txResponse);
+                    txResponse = { hash: result.txHash };
+                    if (txResponse) {
+                        transactionStore.addTransactionRecord(
+                            account,
+                            txResponse
+                        );
+                        response.txResponse = txResponse;
+                    }
+                } else {
+                    response.error = result.error || 'Meta Transaction failed';
+                }
+            } else {
+                response.error = 'Meta Transaction failed';
+            }
+        } else {
+            console.error(biconomyResponse.json());
+            response.error = 'Meta Transaction failed';
+        }
+        return response;
+    };
 
     @action sendTransaction = async (
         contractType: ContractTypes,
